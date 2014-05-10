@@ -12,7 +12,8 @@ import click
 @click.option('-p', '--password', default="", help='MySQL password', required=True)
 @click.option('-d', '--dbname', help='Database name', required=True)
 @click.option('-t', '--table', help='Table or tables to fetch (for many tables, use commas without spaces, e.g. "table1,table2,table3")', required=False)
-def export(hostname, user, password, dbname, table):
+@click.option('-l', '--list-only', help='List database tables and exit', is_flag=True, default=False)
+def export(hostname, user, password, dbname, table, list_only):
     '''Export a database into csv files.'''
   
     # prompt for password if not specified
@@ -26,6 +27,15 @@ def export(hostname, user, password, dbname, table):
 
     # connect to the database
     db = MySQLdb.connect(hostname, user, password, dbname)
+
+    # check if list-only argument was specified
+    if list_only:
+        tables = db.cursor()
+        tables.execute('SHOW TABLES')
+        for table in tables:
+            print table[0]
+        return
+
 
     # check if table argument was specified
     if table:
