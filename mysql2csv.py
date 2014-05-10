@@ -7,14 +7,14 @@ import csv
 import click
 
 @click.command()
-@click.option('-h', '--hostname', default="127.0.0.1", help='Hostname')
+@click.option('-h', '--hostname', default="127.0.0.1", help='Database host name')
 @click.option('-u', '--user', help='MySQL username', required=True)
 @click.option('-p', '--password', default="", help='MySQL password', required=True)
 @click.option('-d', '--dbname', help='Database name', required=True)
-@click.option('-t', '--table', help='Table or tables to fetch (for many tables, use commas without spaces, e.g. "table1,table2,table3")', required=False)
-@click.option('-l', '--list-only', help='List database tables and exit', is_flag=True, default=False)
+@click.option('-t', '--table', help='Table or tables to fetch (for more than one, use commas without spaces, e.g. "table1,table2,table3")', required=False)
+@click.option('-l', '--list-only', help='List database tables and exit.', is_flag=True, default=False)
 def export(hostname, user, password, dbname, table, list_only):
-    '''Export a database into csv files.'''
+    '''Export some or all tables in a MySQL database into CSV files.'''
   
     # prompt for password if not specified
     if not password:
