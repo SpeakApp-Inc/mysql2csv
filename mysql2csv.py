@@ -15,16 +15,30 @@ import click
 def export(hostname, user, password, dbname, table):
     '''Export a database into csv files.'''
   
+    # prompt for password if not specified
     if not password:
         import getpass
         password = getpass.getpass("Enter your password:")
     
-    db = MySQLdb.connect(hostname, user, password, dbname)
-    tables = db.cursor()
-    tables.execute('SHOW TABLES')
-
+    # create the dir to place the CSV files in
     if not os.path.isdir(dbname):
         os.mkdir(dbname)
+
+    # connect to the database
+    db = MySQLdb.connect(hostname, user, password, dbname)
+
+    # check if table argument was specified
+    if table:
+        if len(table.split(',')) == 1:
+            # only one table to fetch
+            tables = [table]
+        else:
+            # multiple tables requested, make the tables list and go on
+            tables = table.split(",")
+    else:
+        # get all tables
+        tables = db.cursor()
+        tables.execute('SHOW TABLES')
 
     for table in tables:
         print "Converting table %s...." % table
@@ -35,7 +49,6 @@ def export(hostname, user, password, dbname, table):
         rows = db.cursor()
         rows.execute('SELECT * FROM %s' % table)
         f.writerows(rows)
-        f.close()
     
 if __name__=="__main__":
     export()
