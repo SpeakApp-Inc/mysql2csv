@@ -36,7 +36,6 @@ def export(hostname, user, password, dbname, table, list_only):
             print table[0]
         return
 
-
     # check if table argument was specified
     if table:
         if len(table.split(',')) == 1:
