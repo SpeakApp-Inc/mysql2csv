@@ -7,8 +7,8 @@ Usage
 -----
 
 ```
-# python mysql2csv.py --help
-Usage: mysql2csv.py [OPTIONS]
+# python mysql2csv --help
+Usage: mysql2csv [OPTIONS]
 
   Export some or all tables in a MySQL database into CSV files.
 
