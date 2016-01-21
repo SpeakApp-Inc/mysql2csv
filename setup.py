@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='mysql2csv',
-      version='0.2',
+      version='1.0',
       description='Convert some or all tables in a MySQL database into CSV files.',
       author='Elcio Ferreira',
       author_email='elcio@visie.com.br',
