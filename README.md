@@ -23,13 +23,13 @@ Options:
   --help                Show this message and exit.
 
 Examples:
-./mysql2csv -h db.conversifi.com -u conversifi -p <password> -d conversifi_etl -q "CALL sp_summary('5b902402c33f1bfa7e112376');" -n sp_summary
+./mysql2csv -q "CALL sp_summary('5b902402c33f1bfa7e112376');" -n sp_summary
 will create a file named *2019-07-05_sp_summary.csv* inside a folder *conversifi_etl*.
 
-./mysql2csv -h db.conversifi.com -u conversifi -p <password> -d conversifi_etl -q "SELECT * FROM users"
+./mysql2csv -q "SELECT * FROM users"
 will create a file named *2019-07-05_query.csv* inside a folder *conversifi_etl*.
 
-./mysql2csv -h db.conversifi.com -u conversifi -p <password> -d conversifi_etl -t users
+./mysql2csv -t users
 will create a file named *2019-07-05_users.csv* inside a folder *conversifi_etl*.
 ```
 
@@ -45,3 +45,14 @@ mysql_user=root           #MySQL username
 mysql_pass=root           #MySQL password
 gdrive_folder_id=1bfhQ5TZm54CaVOBK1eYuOs_wgp2KttoO
 ```
+
+Get _credentials.json_ from Google Developer Console https://console.developers.google.com/apis/ logged in as the destination drive owner
+- create project
+- add GDrive API Library
+- generate OAuth 2.0 client id, kind: Other, then download as JSON
+
+Get *gdrive_folder_id* from google drive destination folder share link.
+
+Run once without parameters to generate _token.pickle_ by login in via webpage.
+Subsequent execution will not require interactive login.
+
