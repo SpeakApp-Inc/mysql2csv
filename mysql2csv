@@ -15,30 +15,76 @@ import sys, os, datetime
 import MySQLdb
 import csv
 import click
+from dotenv import load_dotenv
+import pickle
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.http import MediaFileUpload
+
+def getCredentials():
+    # Credentials management
+    print "Getting credentials..."
+    creds = None
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json',
+                scopes=['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata'])
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+    return creds
+
+def fileUpload(creds, fileName, remoteFileName, folderId):
+    # Drive API
+    print "Uploading file to Google Drive..."
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    # Call the Drive v3 API
+    # filename = '2019-07-05_Users.csv'
+    # folderid = '1bfhQ5TZm54CaVOBK1eYuOs_wgp2KttoO'
+    file_metadata = {'name': remoteFileName, 'parents': [folderId]}
+    media = MediaFileUpload(fileName, mimetype='text/csv', resumable=True)
+
+    file = drive_service.files().create(body=file_metadata,
+                                        media_body=media,
+                                        fields='id').execute()
+
 
 @click.command()
-@click.option('-h', '--hostname', default="127.0.0.1", help='Database host name')
-@click.option('-u', '--user', help='MySQL username', required=True)
-@click.option('-p', '--password', default="", help='MySQL password', required=True)
-@click.option('-d', '--dbname', help='Database name', required=True)
 @click.option('-t', '--table', help='Table or tables to fetch (for more than one, use commas without spaces, e.g. "table1,table2,table3")', required=False)
 @click.option('-l', '--list-only', help='List database tables and exit.', is_flag=True, default=False)
 @click.option('-q', '--query', help='Custom SQL query.', required=False)
-@click.option('-n', '--filename', help='Set exported csv filename.', required=False)
-def export(hostname, user, password, dbname, table, list_only, query, filename):
+@click.option('-n', '--filename', help='Set exported csv filename.')
+def export(table, list_only, query, filename):
     '''Export some or all tables in a MySQL database into CSV files.'''
-  
-    # prompt for password if not specified
-    if not password:
-        import getpass
-        password = getpass.getpass("Enter your password:")
-    
+    load_dotenv()
+    hostname = os.getenv('mysql_host')
+    user = os.getenv('mysql_user')
+    password = os.getenv('mysql_pass')
+    dbname = os.getenv('mysql_db')
+
+    folderid = os.getenv('gdrive_folder_id')
+
+    print "DB Name %s" % dbname
+
     # create the dir to place the CSV files in
     if not os.path.isdir(dbname):
         os.mkdir(dbname)
 
     # connect to the database
     db = MySQLdb.connect(hostname, user, password, dbname)
+
+    credentials = getCredentials()
+    # exit if there are no parameters
+    if not list_only and not query and not table:
+        return
 
     # check if list-only argument was specified
     if list_only:
@@ -56,11 +102,12 @@ def export(hostname, user, password, dbname, table, list_only, query, filename):
         if not filename:
             filename = "%s_query.csv" % strDate
         else:
-            filename = '_'.join([strDate, filename + '.csv'])     
+            filename = '_'.join([strDate, filename + '.csv'])
         f = csv.writer(open(os.path.join(dbname, filename),'w'))
         rows = db.cursor()
         rows.execute(query)
         f.writerows(rows)
+        fileUpload(credentials, os.path.join(dbname, filename), filename, folderid)
         return
 
     # check if table argument was specified
@@ -86,7 +133,7 @@ def export(hostname, user, password, dbname, table, list_only, query, filename):
         rows = db.cursor()
         rows.execute('SELECT * FROM %s' % table)
         f.writerows(rows)
-    
+        fileUpload(credentials, os.path.join(dbname, filename), filename, folderid)
+
 if __name__=="__main__":
     export()
-
