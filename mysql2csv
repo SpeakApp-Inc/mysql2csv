@@ -23,7 +23,9 @@ import click
 @click.option('-d', '--dbname', help='Database name', required=True)
 @click.option('-t', '--table', help='Table or tables to fetch (for more than one, use commas without spaces, e.g. "table1,table2,table3")', required=False)
 @click.option('-l', '--list-only', help='List database tables and exit.', is_flag=True, default=False)
-def export(hostname, user, password, dbname, table, list_only):
+@click.option('-q', '--query', help='Custom SQL query.', required=False)
+@click.option('-n', '--filename', help='Set exported csv filename.', required=False)
+def export(hostname, user, password, dbname, table, list_only, query, filename):
     '''Export some or all tables in a MySQL database into CSV files.'''
   
     # prompt for password if not specified
@@ -46,6 +48,21 @@ def export(hostname, user, password, dbname, table, list_only):
             print table[0]
         return
 
+    t = datetime.datetime.now()
+    strDate = t.strftime('%Y-%m-%d')
+    # check if custom query was called
+    if query:
+        print "Executing query..."
+        if not filename:
+            filename = "%s_query.csv" % strDate
+        else:
+            filename = '_'.join([strDate, filename + '.csv'])     
+        f = csv.writer(open(os.path.join(dbname, filename),'w'))
+        rows = db.cursor()
+        rows.execute(query)
+        f.writerows(rows)
+        return
+
     # check if table argument was specified
     if table:
         if len(table.split(',')) == 1:
@@ -61,7 +78,8 @@ def export(hostname, user, password, dbname, table, list_only):
 
     for table in tables:
         print "Converting table %s...." % table
-        f = csv.writer(open(os.path.join(dbname, "%s.csv" % table),'w'))
+        filename = '_'.join([strDate, table + '.csv'])  #always use table name in case we are exporting many tables
+        f = csv.writer(open(os.path.join(dbname, filename),'w'))
         colnames = db.cursor()
         colnames.execute('DESCRIBE %s' % table)
         f.writerow([i[0] for i in colnames])
